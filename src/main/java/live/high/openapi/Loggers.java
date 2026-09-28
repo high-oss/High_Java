@@ -28,7 +28,14 @@ public final class Loggers {
 
     private Loggers() {}
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    // Registers JavaTimeModule directly rather than reusing the generated
+    // JSON class's mapper: Loggers is a foundational, model-agnostic module
+    // (it redacts whatever object it is handed), so it stays decoupled from
+    // generated/ rather than depending on it. A caller can legitimately log
+    // any payload, including a generated model with an OffsetDateTime or
+    // LocalDate field, so the module is still needed here too.
+    private static final ObjectMapper MAPPER = new ObjectMapper()
+        .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
     /**
      * Query parameters that must never reach a log sink. {@code tOtp} is a live

@@ -57,7 +57,12 @@ public final class Transport {
         String method, String path, AuthKind auth, Map<String, String> query, Object body
     ) {}
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    // Reuses the generated JSON class's ObjectMapper (JavaTimeModule,
+    // JsonNullableModule, enum (de)serialization via the generator's own
+    // conventions) rather than a bare `new ObjectMapper()` — the generated
+    // models carry OffsetDateTime/LocalDate fields (AccessToken.expiresAt,
+    // MarketStatus.date, Expiry.expiry, …) that fail without it.
+    private static final ObjectMapper MAPPER = live.high.openapi.generated.JSON.getDefault().getMapper();
 
     private static final Set<Integer> RETRYABLE = Set.of(429, 500, 502, 503, 504);
     private static final Set<String> IDEMPOTENT = Set.of("GET", "HEAD");
