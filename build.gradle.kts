@@ -64,6 +64,9 @@ tasks.test {
 
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
+    if (name == "compileJava") {
+        options.compilerArgs.add("-Xlint:deprecation")
+    }
     // Generated sources are OpenAPI Generator output and are exempt from our
     // own warning discipline.
 }
