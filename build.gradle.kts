@@ -29,6 +29,18 @@ sourceSets {
         // duplicate-register a default resources dir if restated here.
         java.srcDir("generated/src/main/java")
     }
+    create("examples") {
+        java.srcDir("examples")
+        compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
+        runtimeClasspath += sourceSets.main.get().output + sourceSets.main.get().runtimeClasspath
+    }
+}
+
+tasks.register<JavaExec>("runExample") {
+    group = "examples"
+    description = "Runs an example: gradle runExample -PmainClass=examples.Quickstart"
+    classpath = sourceSets["examples"].runtimeClasspath
+    mainClass.set(providers.gradleProperty("mainClass").orElse("live.high.openapi.examples.Quickstart"))
 }
 
 val jacksonVersion = "2.21.5"
