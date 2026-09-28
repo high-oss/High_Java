@@ -87,6 +87,30 @@ publishing {
             artifactId = "high-openapi"
             version = project.version.toString()
             from(components["java"])
+
+            pom {
+                name.set("high-openapi")
+                description.set("Official Java SDK for the HIGH Open API.")
+                url.set("https://github.com/high-oss/High_Java")
+                licenses {
+                    license {
+                        name.set("MIT")
+                        url.set("https://opensource.org/licenses/MIT")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("high-oss")
+                        name.set("High-OSS")
+                        email.set("care@high.live")
+                    }
+                }
+                scm {
+                    url.set("https://github.com/high-oss/High_Java")
+                    connection.set("scm:git:https://github.com/high-oss/High_Java.git")
+                    developerConnection.set("scm:git:https://github.com/high-oss/High_Java.git")
+                }
+            }
         }
     }
 }
