@@ -125,8 +125,18 @@ public final class TestServer implements AutoCloseable {
         }
     }
 
-    /** Sends a 204 with no body. */
+    /**
+     * Sends a 204 with no body.
+     *
+     * <p>Forces {@code Connection: close}. Without it, {@code
+     * HttpExchange#sendResponseHeaders(204, -1)} leaves the framing of "no
+     * body" ambiguous enough over a kept-alive HTTP/1.1 connection that {@code
+     * java.net.http}'s client can hang waiting for bytes that were never
+     * going to arrive — an explicit close is the unambiguous end-of-body
+     * signal.
+     */
     public static void noContent(HttpExchange exchange) throws IOException {
+        exchange.getResponseHeaders().add("connection", "close");
         exchange.sendResponseHeaders(204, -1);
         exchange.close();
     }

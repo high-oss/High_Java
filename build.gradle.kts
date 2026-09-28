@@ -24,12 +24,10 @@ repositories {
 // generated/README.md and scripts/regenerate.sh for how to refresh them.
 sourceSets {
     main {
-        java.srcDirs("src/main/java", "generated/src/main/java")
-        resources.srcDirs("src/main/resources")
-    }
-    test {
-        java.srcDirs("src/test/java")
-        resources.srcDirs("src/test/resources")
+        // .srcDir (singular) ADDS to the convention's default dirs; .srcDirs
+        // (plural) REPLACES them, which would silently drop src/main/java and
+        // duplicate-register a default resources dir if restated here.
+        java.srcDir("generated/src/main/java")
     }
 }
 
