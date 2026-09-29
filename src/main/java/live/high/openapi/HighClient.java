@@ -4,6 +4,7 @@
 package live.high.openapi;
 
 import live.high.openapi.resources.AuthResource;
+import live.high.openapi.resources.InstrumentsResource;
 import live.high.openapi.resources.MarketResource;
 import live.high.openapi.resources.OrdersResource;
 import live.high.openapi.resources.PortfolioResource;
@@ -29,6 +30,7 @@ public final class HighClient {
     private final OrdersResource orders;
     private final PortfolioResource portfolio;
     private final ScripsResource scrips;
+    private final InstrumentsResource instruments;
 
     public HighClient(HighClientOptions options) {
         this.config = ResolvedConfig.resolve(options);
@@ -37,6 +39,7 @@ public final class HighClient {
         this.orders = new OrdersResource(config);
         this.portfolio = new PortfolioResource(config);
         this.scrips = new ScripsResource(config);
+        this.instruments = new InstrumentsResource(config);
     }
 
     public HighClient() {
@@ -66,6 +69,11 @@ public final class HighClient {
 
     public ScripsResource scrips() {
         return scrips;
+    }
+
+    /** The instrument list (the scrip master), by category. Needs no credentials. */
+    public InstrumentsResource instruments() {
+        return instruments;
     }
 
     @Override

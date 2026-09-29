@@ -212,4 +212,17 @@ class ConfigTest {
         assertTrue(config.apiKey().isEmpty());
         assertTrue(config.accessToken().isEmpty());
     }
+
+    @Test
+    void defaultsAllowedInstrumentHostsToTheKnownCdnHost() {
+        ResolvedConfig config = resolve(HighClientOptions.builder().build());
+        assertTrue(config.allowedInstrumentHosts().contains("high-space.blr1.cdn.digitaloceanspaces.com"));
+    }
+
+    @Test
+    void letsAllowedInstrumentHostsBeOverridden() {
+        ResolvedConfig config = resolve(
+            HighClientOptions.builder().allowedInstrumentHosts(java.util.Set.of("127.0.0.1")).build());
+        assertEquals(java.util.Set.of("127.0.0.1"), config.allowedInstrumentHosts());
+    }
 }

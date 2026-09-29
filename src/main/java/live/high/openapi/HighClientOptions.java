@@ -4,6 +4,7 @@
 package live.high.openapi;
 
 import java.net.http.HttpClient;
+import java.util.Set;
 
 /**
  * Options for {@link HighClient}, built via {@link #builder()}.
@@ -28,6 +29,7 @@ public final class HighClientOptions {
     private final LogLevel logLevel;
     private final LogSink logSink;
     private final HttpClient httpClient;
+    private final Set<String> allowedInstrumentHosts;
 
     private HighClientOptions(Builder b) {
         this.environment = b.environment;
@@ -43,6 +45,7 @@ public final class HighClientOptions {
         this.logLevel = b.logLevel;
         this.logSink = b.logSink;
         this.httpClient = b.httpClient;
+        this.allowedInstrumentHosts = b.allowedInstrumentHosts;
     }
 
     Environment environment() {
@@ -97,6 +100,10 @@ public final class HighClientOptions {
         return httpClient;
     }
 
+    Set<String> allowedInstrumentHosts() {
+        return allowedInstrumentHosts;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -116,6 +123,7 @@ public final class HighClientOptions {
         private LogLevel logLevel;
         private LogSink logSink;
         private HttpClient httpClient;
+        private Set<String> allowedInstrumentHosts;
 
         private Builder() {}
 
@@ -201,6 +209,20 @@ public final class HighClientOptions {
         /** Transport override, for tests or a proxy-aware client. */
         public Builder httpClient(HttpClient httpClient) {
             this.httpClient = httpClient;
+            return this;
+        }
+
+        /**
+         * Hosts {@code instruments()} is allowed to download the instrument-list
+         * CSV from, after resolving the download URL the manifest names. Default:
+         * the one CDN host the manifest normally points at. A URL whose host is
+         * not in this set (or whose scheme is not {@code https}) is refused
+         * before any request is made — the file is served by a third-party CDN,
+         * and this is what keeps a compromised or malformed manifest from
+         * redirecting the SDK somewhere unexpected.
+         */
+        public Builder allowedInstrumentHosts(Set<String> allowedInstrumentHosts) {
+            this.allowedInstrumentHosts = allowedInstrumentHosts;
             return this;
         }
 

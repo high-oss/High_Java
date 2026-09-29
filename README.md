@@ -242,6 +242,43 @@ for why, and `scripts/regenerate.sh`'s header comment for the one schema
 (`Error`'s `message` field) the generator cannot produce compilable Java for
 at all.
 
+## Instrument list
+
+The instrument list (the scrip master): every scrip HIGH knows, as CSV rows,
+one category at a time.
+
+```java
+import live.high.openapi.generated.model.InstrumentFile;
+import live.high.openapi.model.Instrument;
+import java.util.stream.Stream;
+
+// Streaming is the primary form — always consume it in try-with-resources.
+try (Stream<Instrument> equities = high.instruments().stream(InstrumentFile.InstrumentEnum.EQUITY)) {
+    equities.filter(i -> "NSE".equals(i.exchange())).forEach(i -> System.out.println(i.highTradingSymbol()));
+}
+
+// Or collect it eagerly, for a smaller category or when you want a List.
+List<Instrument> etfs = high.instruments().list(InstrumentFile.InstrumentEnum.ETFS);
+```
+
+Five categories: `ALL`, `EQUITY`, `DERIVATIVES`, `COMMODITY`, `ETFS`. `ALL` and
+`DERIVATIVES` are large (tens of megabytes) — `stream(...)` parses lazily off
+the response body rather than buffering the file, so prefer it over `list(...)`
+for those two.
+
+Each row is an `Instrument` with 17 typed fields: `exchange`, `segment`,
+`instrument`, `highTradingSymbol`, `scripKey`, `isin`, `scripCode`, `symbol`,
+`name`, `groupSeries`, `hasFnO`, `underlyingSymbol`, `expiry`, `optionType`,
+`strikePrice`, `priceTick`, `lotSize`. A blank field is `null`, never `""`.
+`priceTick` is deliberately left as the raw integer the file carries — its
+scale varies by segment, and rescaling it generically would be a silent
+pricing bug.
+
+This needs **no credentials** — call it before you have an `accessToken`, or
+on a client built with none at all. The list is rebuilt once each trading
+morning and does not change intraday, so **cache the rows for the day** in
+your own application rather than re-fetching per call.
+
 ## Live datafeed
 
 No socket client ships in this release. `wsBaseUrl` is resolved and exposed

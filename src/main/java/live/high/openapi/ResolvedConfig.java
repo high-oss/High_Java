@@ -7,6 +7,7 @@ import java.net.http.HttpClient;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Settles where requests go and what they carry, once, at client
@@ -28,6 +29,15 @@ public final class ResolvedConfig {
 
     private static final String DEFAULT_USER_AGENT = "high-sdk-java/0.0.1";
 
+    /**
+     * The one host {@code InstrumentFile.url} normally points at. Kept here,
+     * next to the other defaults, so {@code allowedInstrumentHosts} has
+     * somewhere to fall back to without {@code InstrumentsResource} needing
+     * its own notion of "default config".
+     */
+    private static final Set<String> DEFAULT_ALLOWED_INSTRUMENT_HOSTS =
+        Set.of("high-space.blr1.cdn.digitaloceanspaces.com");
+
     private final String baseUrl;
     private final String wsBaseUrl;
     private final String versionPath;
@@ -38,6 +48,7 @@ public final class ResolvedConfig {
     private final LogLevel logLevel;
     private final Logger logger;
     private final HttpClient httpClient;
+    private final Set<String> allowedInstrumentHosts;
 
     // Deliberately excluded from toString(). See the class-level note.
     private final String apiKey;
@@ -47,7 +58,7 @@ public final class ResolvedConfig {
         String baseUrl, String wsBaseUrl, String versionPath,
         int timeoutMs, int maxRetries, int maxRetryDelayMs,
         String userAgent, LogLevel logLevel, Logger logger, HttpClient httpClient,
-        String apiKey, String accessToken
+        Set<String> allowedInstrumentHosts, String apiKey, String accessToken
     ) {
         this.baseUrl = baseUrl;
         this.wsBaseUrl = wsBaseUrl;
@@ -59,6 +70,7 @@ public final class ResolvedConfig {
         this.logLevel = logLevel;
         this.logger = logger;
         this.httpClient = httpClient;
+        this.allowedInstrumentHosts = allowedInstrumentHosts;
         this.apiKey = apiKey;
         this.accessToken = accessToken;
     }
@@ -116,13 +128,17 @@ public final class ResolvedConfig {
 
         HttpClient httpClient = options.httpClient() != null ? options.httpClient() : HttpClient.newHttpClient();
 
+        Set<String> allowedInstrumentHosts = options.allowedInstrumentHosts() != null
+            ? Set.copyOf(options.allowedInstrumentHosts())
+            : DEFAULT_ALLOWED_INSTRUMENT_HOSTS;
+
         String apiKey = options.apiKey() != null ? options.apiKey() : env.get("HIGH_API_KEY");
         String accessToken = options.accessToken() != null ? options.accessToken() : env.get("HIGH_ACCESS_TOKEN");
 
         return new ResolvedConfig(
             stripTrailingSlashes(baseUrl), stripTrailingSlashes(wsBaseUrl), trimSlashes(rawVersionPath),
             timeoutMs, maxRetries, maxRetryDelayMs, userAgent, logLevel, logger, httpClient,
-            apiKey, accessToken);
+            allowedInstrumentHosts, apiKey, accessToken);
     }
 
     private static int requirePositive(int value, String name) {
@@ -203,6 +219,11 @@ public final class ResolvedConfig {
         return httpClient;
     }
 
+    /** Hosts {@code instruments()} may download the instrument-list CSV from. See {@code HighClientOptions.allowedInstrumentHosts}. */
+    public Set<String> allowedInstrumentHosts() {
+        return allowedInstrumentHosts;
+    }
+
     public Optional<String> apiKey() {
         return Optional.ofNullable(apiKey);
     }
@@ -224,6 +245,7 @@ public final class ResolvedConfig {
             + ", maxRetryDelayMs=" + maxRetryDelayMs
             + ", userAgent='" + userAgent + '\''
             + ", logLevel=" + logLevel
+            + ", allowedInstrumentHosts=" + allowedInstrumentHosts
             + ", apiKey=" + (apiKey != null ? "<set>" : "<absent>")
             + ", accessToken=" + (accessToken != null ? "<set>" : "<absent>")
             + '}';

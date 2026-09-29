@@ -50,7 +50,14 @@ public final class Transport {
 
     private Transport() {}
 
-    public enum AuthKind { BEARER, API_KEY }
+    /**
+     * {@code NONE} sends no credential at all, even when the client was
+     * configured with one — for the one operation that must never carry a
+     * bearer token or API key (the instrument list manifest, and by extension
+     * the third-party CDN it points at): see {@code
+     * live.high.openapi.resources.InstrumentsResource}.
+     */
+    public enum AuthKind { BEARER, API_KEY, NONE }
 
     /** One operation to send. {@code query} values are already stringified; nulls are skipped by the caller. */
     public record RequestSpec(
@@ -135,11 +142,13 @@ public final class Transport {
             String token = config.accessToken().orElseThrow(() -> new HighApiError(
                 "This operation needs an accessToken. Pass it to the client, or set HIGH_ACCESS_TOKEN.", 0));
             headers.put("authorization", "Bearer " + token);
-        } else {
+        } else if (spec.auth() == AuthKind.API_KEY) {
             String key = config.apiKey().orElseThrow(() -> new HighApiError(
                 "This operation needs an apiKey. Pass it to the client, or set HIGH_API_KEY.", 0));
             headers.put("x-api-key", key);
         }
+        // AuthKind.NONE: deliberately attaches neither header, even if the
+        // client was configured with credentials.
         if (spec.body() != null) headers.put("content-type", "application/json");
         return headers;
     }

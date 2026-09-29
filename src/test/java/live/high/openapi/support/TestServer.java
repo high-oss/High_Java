@@ -5,16 +5,22 @@ package live.high.openapi.support;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsServer;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
 
 /**
  * A real HTTP server on a random port, backed by the JDK's own {@link
@@ -35,15 +41,50 @@ public final class TestServer implements AutoCloseable {
     private final HttpServer server;
     private final ExecutorService executor;
     private final List<ReceivedRequest> requests = new ArrayList<>();
+    private final boolean tls;
     private volatile boolean closed = false;
 
-    private TestServer(HttpServer server, ExecutorService executor) {
+    private TestServer(HttpServer server, ExecutorService executor, boolean tls) {
         this.server = server;
         this.executor = executor;
+        this.tls = tls;
     }
 
     public static TestServer start(Handler handler) throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        return start(HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0), handler, false);
+    }
+
+    /**
+     * As {@link #start}, but over TLS with a throwaway self-signed certificate
+     * for {@code 127.0.0.1} — for the one feature that refuses a plain {@code
+     * http://} URL outright ({@code InstrumentsResource}'s downloaded-URL
+     * safety check), a real "happy path" test needs a server that actually
+     * speaks TLS, not just an {@code https://} string nothing connects to.
+     * Pair this with {@code InstrumentsResourceTest#trustingHttpClient()} on
+     * the client side, since the certificate is self-signed.
+     */
+    public static TestServer startTls(Handler handler) throws Exception {
+        char[] password = "changeit".toCharArray();
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        try (InputStream in = TestServer.class.getResourceAsStream("/instrument-test-tls.p12")) {
+            keyStore.load(in, password);
+        }
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        kmf.init(keyStore, password);
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(kmf.getKeyManagers(), null, null);
+
+        HttpsServer server = HttpsServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
+            @Override
+            public void configure(com.sun.net.httpserver.HttpsParameters params) {
+                params.setSSLParameters(sslContext.getDefaultSSLParameters());
+            }
+        });
+        return start(server, handler, true);
+    }
+
+    private static TestServer start(HttpServer server, Handler handler, boolean tls) throws IOException {
         // A cached pool so a handler that sleeps (to simulate a hang or a
         // stalled body) never blocks any other request, in this test or another
         // running concurrently.
@@ -52,7 +93,7 @@ public final class TestServer implements AutoCloseable {
             t.setDaemon(true);
             return t;
         });
-        TestServer testServer = new TestServer(server, executor);
+        TestServer testServer = new TestServer(server, executor, tls);
 
         server.createContext("/", exchange -> {
             try {
@@ -81,7 +122,7 @@ public final class TestServer implements AutoCloseable {
     }
 
     public String baseUrl() {
-        return "http://127.0.0.1:" + server.getAddress().getPort();
+        return (tls ? "https://127.0.0.1:" : "http://127.0.0.1:") + server.getAddress().getPort();
     }
 
     public List<ReceivedRequest> requests() {

@@ -33,6 +33,7 @@ class PublicSurfaceTest {
         assertTrue(client.orders() != null);
         assertTrue(client.portfolio() != null);
         assertTrue(client.scrips() != null);
+        assertTrue(client.instruments() != null);
     }
 
     /**
@@ -106,7 +107,7 @@ class PublicSurfaceTest {
         assertFalse(json.contains("SECRET-KEY"));
 
         for (Object resource : new Object[] {
-            client.auth(), client.orders(), client.portfolio(), client.scrips(), client.market()
+            client.auth(), client.orders(), client.portfolio(), client.scrips(), client.market(), client.instruments()
         }) {
             String resourceJson = mapper.writeValueAsString(resource);
             assertFalse(resourceJson.contains("SECRET-TOKEN"));
