@@ -230,6 +230,32 @@ class HighFeedTest {
         }
     }
 
+    @Test
+    void rejectsAnAmbiguousIndexKeyFromEitherSideWithoutSendingAnything() throws Exception {
+        try (WebSocketTestServer server = WebSocketTestServer.start()) {
+            HighFeed feed = feed(server);
+            CompletableFuture<Void> connecting = connectAsync(feed);
+            WebSocketTestServer.Connection conn = server.acceptConnection(3000);
+            conn.receiveText(3000);
+            conn.sendText(OK_ACK);
+            connecting.get(3000, TimeUnit.MILLISECONDS);
+
+            // NSE@26002 is a scrip key the scrip master maps to two different
+            // indices (Nifty FMCG and Nifty50 PR 2x Lev) — neither
+            // subscribeIndices nor subscribeQuotes may guess which one is meant.
+            HighFeedError fromIndices = assertThrows(HighFeedError.class,
+                () -> feed.subscribeIndices(List.of("NSE@26002")));
+            assertEquals(HighFeedError.Reason.AMBIGUOUS_SCRIP, fromIndices.reason());
+
+            HighFeedError fromQuotes = assertThrows(HighFeedError.class,
+                () -> feed.subscribeQuotes(List.of("NSE@26002")));
+            assertEquals(HighFeedError.Reason.AMBIGUOUS_SCRIP, fromQuotes.reason());
+
+            // Refused locally — the server never saw a subscribe frame for it.
+            assertThrows(java.io.IOException.class, () -> conn.receiveText(300));
+        }
+    }
+
     // --- fragmented frames ------------------------------------------------------
 
     @Test

@@ -344,6 +344,12 @@ index, telling you to use the index methods instead — an index key that fell
 through to the ordinary equity path would silently subscribe to a token the
 feed does not know, and then simply never tick.
 
+A handful of scrip keys are **ambiguous** rather than unknown: the scrip
+master maps one token to two different indices, with nothing to say which one
+a caller means. Neither family guesses — both refuse the key outright
+(`HighFeedError` with reason `AMBIGUOUS_SCRIP`), naming the candidate index
+names so you can see why it was rejected.
+
 **Typed models**, one per kind, each carrying the scrip key you subscribed
 with:
 

@@ -70,6 +70,38 @@ class ScripKeyTranslatorTest {
         assertTrue(error.getMessage().contains("subscribeIndices"));
     }
 
+    // --- ambiguous: one token, two indices — the third rejection case --------
+
+    @Test
+    void translateIndexRejectsAnAmbiguousKeyNamingBothCandidates() {
+        HighFeedError error = assertThrows(HighFeedError.class, () -> ScripKeyTranslator.translateIndex("NSE@26002"));
+        assertEquals(HighFeedError.Reason.AMBIGUOUS_SCRIP, error.reason());
+        assertTrue(error.getMessage().contains("NSE@26002"));
+        assertTrue(error.getMessage().contains("Nifty FMCG"));
+        assertTrue(error.getMessage().contains("Nifty50 PR 2x Lev"));
+    }
+
+    @Test
+    void translateNonIndexAlsoRejectsAnAmbiguousKeyRatherThanTreatingItAsAnOrdinaryToken() {
+        // The failure this must prevent: NSE@26002 looks exactly like an
+        // ordinary NSE@ cash-market key, so without this check it would
+        // translate to "nse_cm|26002" — a token the feed does not carry —
+        // and the subscription would be accepted and simply never tick.
+        HighFeedError error = assertThrows(HighFeedError.class, () -> ScripKeyTranslator.translateNonIndex("NSE@26002"));
+        assertEquals(HighFeedError.Reason.AMBIGUOUS_SCRIP, error.reason());
+        assertTrue(error.getMessage().contains("NSE@26002"));
+    }
+
+    @Test
+    void everyAmbiguousKeyIsRejectedByBothMethods() {
+        for (String scripKey : IndexFeedMap.AMBIGUOUS.keySet()) {
+            HighFeedError fromIndex = assertThrows(HighFeedError.class, () -> ScripKeyTranslator.translateIndex(scripKey));
+            assertEquals(HighFeedError.Reason.AMBIGUOUS_SCRIP, fromIndex.reason());
+            HighFeedError fromNonIndex = assertThrows(HighFeedError.class, () -> ScripKeyTranslator.translateNonIndex(scripKey));
+            assertEquals(HighFeedError.Reason.AMBIGUOUS_SCRIP, fromNonIndex.reason());
+        }
+    }
+
     @Test
     void wouldHaveMistranslatedAnIndexKeyThroughThePrefixRuleIfNotCaught() {
         // The defect the coordinator's split closes: NSE@26000 (Nifty 50) would

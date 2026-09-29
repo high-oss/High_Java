@@ -3,6 +3,7 @@
 
 package live.high.openapi.feed;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,31 +18,23 @@ import java.util.Map;
  * live.high.openapi.feed.ScripKeyTranslator} looks a key up here <b>first</b>;
  * a miss falls through to the prefix rule. See datafeed plan Phase 1.
  *
- * <p><b>Six scrip keys are deliberately absent</b>, on top of the four the
- * canonical file itself already excludes (no feed counterpart for HANGSENG
- * BEES-NAV, S&amp;P BSE CARBONEX, S&amp;P BSE GREENEX, S&amp;P BSE DOLLEX 30).
- * These six are a data defect in the canonical file: each key appears
- * <em>twice</em>, against two different, unrelated index names, and nothing
- * in the source resolves which row is correct —
+ * <p>The canonical file is an object, not a flat list: an {@code indices}
+ * array — {@link #BY_SCRIP_KEY} below, one entry per row — and a separate
+ * {@code ambiguous} array for scrip keys the source itself flags as
+ * unresolvable: the scrip master genuinely shares one token between two
+ * index names (e.g. {@code NSE@26002} is both "Nifty FMCG" and "Nifty50 PR
+ * 2x Lev"). Those six keys are {@link #AMBIGUOUS} below, never {@link
+ * #BY_SCRIP_KEY} — {@code ScripKeyTranslator} rejects them by name, listing
+ * the candidates, rather than picking one and silently streaming the wrong
+ * index under a name the caller trusts. Four further index rows (HANGSENG
+ * BEES-NAV, S&amp;P BSE CARBONEX, S&amp;P BSE GREENEX, S&amp;P BSE DOLLEX 30)
+ * have no feed counterpart at all and are simply absent from both arrays —
+ * the datafeed plan records why for each.
  *
- * <ul>
- *   <li>{@code NSE@26002}: "Nifty FMCG" vs "Nifty50 PR 2x Lev"</li>
- *   <li>{@code NSE@26020}: "Nifty Energy" vs "Nifty PSU Bank"</li>
- *   <li>{@code NSE@26034}: "Nifty Div Opps 50" vs "Nifty Metal"</li>
- *   <li>{@code NSE@26040}: "Nifty Commodities" vs "Nifty100 Liq 15"</li>
- *   <li>{@code NSE@26044}: "NIFTY MIDCAP 100" vs "Nifty50 TR 1x Inv"</li>
- *   <li>{@code NSE@26046}: "Nifty Mid Liq 15" vs "NIFTY SMLCAP 100"</li>
- * </ul>
- *
- * <p>Per the same discipline the plan applies to {@code DOLLEX 30} → {@code
- * DOL300} ("not a match to make on a hunch... a wrong guess streams a
- * different index under our name"), picking either row here on a guess would
- * silently subscribe the caller to the wrong index under a name they trust.
- * These six are excluded rather than guessed; {@code
- * IndexFeedMapGenerationTest} re-derives this exact exclusion from the
- * checked-in JSON, so the moment the canonical file is fixed upstream, the
- * test starts failing until this table picks the row back up — a defect
- * surfaces as a build failure, not a silent gap.
+ * <p>{@code IndexFeedMapGenerationTest} re-derives both {@link
+ * #BY_SCRIP_KEY} and {@link #AMBIGUOUS} from the checked-in JSON, so either
+ * table drifting from the canonical source is a failing test, not a silent
+ * gap.
  */
 public final class IndexFeedMap {
 
@@ -49,6 +42,24 @@ public final class IndexFeedMap {
 
     /** One row: the HIGH scrip key, the feed's segment, the feed's own symbol (subscribe by this), and its display name. */
     public record Entry(String scripKey, String feedSegment, String feedSymbol, String name) {}
+
+    /**
+     * Scrip keys the scrip master maps to more than one index, each with the
+     * candidate index names it could mean. Deliberately excluded from {@link
+     * #BY_SCRIP_KEY} — see the class Javadoc — and checked by {@code
+     * ScripKeyTranslator} before either lookup so both the index methods and
+     * the quote/depth methods reject one of these with a message naming the
+     * candidates, rather than the quote/depth path silently mistranslating it
+     * through the ordinary prefix rule.
+     */
+    public static final Map<String, List<String>> AMBIGUOUS = Map.ofEntries(
+        Map.entry("NSE@26002", List.of("Nifty FMCG", "Nifty50 PR 2x Lev")),
+        Map.entry("NSE@26020", List.of("Nifty Energy", "Nifty PSU Bank")),
+        Map.entry("NSE@26034", List.of("Nifty Div Opps 50", "Nifty Metal")),
+        Map.entry("NSE@26040", List.of("Nifty Commodities", "Nifty100 Liq 15")),
+        Map.entry("NSE@26044", List.of("NIFTY MIDCAP 100", "Nifty50 TR 1x Inv")),
+        Map.entry("NSE@26046", List.of("NIFTY SMLCAP 100", "Nifty Mid Liq 15"))
+    );
 
     public static final Map<String, Entry> BY_SCRIP_KEY = Map.ofEntries(
         Map.entry("BSE@19000", new Entry("BSE@19000", "bse_cm", "SENSEX", "SENSEX")),

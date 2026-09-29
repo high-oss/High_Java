@@ -35,7 +35,9 @@ Initial release.
   `subscribeIndices` methods (with `unsubscribe*`/`snapshot*` counterparts)
   take HIGH scrip keys only — the feed's own identifiers never appear in the
   public surface — and validate in both directions: the index methods refuse
-  a non-index key, the quote/depth methods refuse an index key. Auth is a
+  a non-index key, the quote/depth methods refuse an index key, and both
+  refuse a scrip key the scrip master itself maps to more than one index
+  (reason `AMBIGUOUS_SCRIP`, naming the candidates) rather than guessing. Auth is a
   gate: the access token is sent first and nothing else is sent until it is
   acknowledged; a rejection is a typed `HighFeedError` and is never retried.
   A transport failure reconnects with backoff, re-authenticates, and

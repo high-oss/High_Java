@@ -45,6 +45,8 @@ public final class HighFeedError extends RuntimeException {
         OTHER,
         /** A scrip key this connection refuses to translate — unknown prefix, MCX spot, an index absent from the table, or an index method given a non-index key (or vice versa). */
         UNSUPPORTED_SCRIP,
+        /** A scrip key the scrip master itself maps to more than one index (one token shared by two index names). Never guessed at — see {@code live.high.openapi.feed.IndexFeedMap#AMBIGUOUS}. */
+        AMBIGUOUS_SCRIP,
         /** A subscription would exceed {@code maxScripPerConn} or a single request would exceed {@code maxScripPerReq}. */
         LIMIT_EXCEEDED,
         /** The socket itself — connect, handshake, or an in-flight exchange failed. Reconnected with backoff; this is not that retry failing, it is a single attempt's outcome. */
@@ -97,6 +99,10 @@ public final class HighFeedError extends RuntimeException {
 
     public static HighFeedError unsupportedScrip(String message) {
         return new HighFeedError(message, Reason.UNSUPPORTED_SCRIP, null, null, null);
+    }
+
+    public static HighFeedError ambiguousScrip(String message) {
+        return new HighFeedError(message, Reason.AMBIGUOUS_SCRIP, null, null, null);
     }
 
     public static HighFeedError limitExceeded(String message) {
