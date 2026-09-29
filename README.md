@@ -281,8 +281,111 @@ your own application rather than re-fetching per call.
 
 ## Live datafeed
 
-No socket client ships in this release. `wsBaseUrl` is resolved and exposed
-on `ResolvedConfig`, but nothing consumes it yet.
+`HighFeed`, a separate client alongside `HighClient`, built from the same
+`HighClientOptions` and credentials. It adds **no new dependency** — it is
+built entirely on `java.net.http.WebSocket`, the JDK's own client, so pulling
+in the live feed costs nothing beyond what `HighClient` already needs.
+
+```java
+import live.high.openapi.*;
+import live.high.openapi.feed.*;
+
+HighFeed feed = new HighFeed(HighClientOptions.builder()
+    .accessToken(System.getenv("HIGH_ACCESS_TOKEN"))
+    .build());
+
+feed.addListener(new FeedListener() {
+    public void onQuote(QuoteEvent event) {
+        Quote q = event.quote();
+        System.out.println(q.scripKey() + " " + q.lastTradedPrice() + " (" + event.changedFields() + " changed)");
+    }
+
+    public void onDepth(DepthEvent event) {
+        System.out.println(event.depth().scripKey() + " " + event.depth().source() + " " + event.depth().bids());
+    }
+
+    public void onIndex(IndexEvent event) {
+        System.out.println(event.index().indexName() + " " + event.index().indexValue());
+    }
+});
+
+feed.connect();                                          // blocks until authenticated
+feed.subscribeQuotes(List.of("NSE@2885", "BSE@532540"));  // touchline
+feed.subscribeDepth(List.of("NSE@2885"));                 // five-level order book
+feed.subscribeIndices(List.of("NSE@26000"));              // Nifty 50 — see below
+```
+
+Or consume the same events as a stream:
+
+```java
+feed.publisher().subscribe(new Flow.Subscriber<FeedEvent>() { ... });
+```
+
+**Production only.** There is no sandbox datafeed. A client built with
+`.environment(Environment.SANDBOX)` — or resolved to it via `HIGH_ENVIRONMENT`
+— fails at construction rather than silently connecting to production or to a
+sandbox host that does not exist.
+
+**Subscribe by HIGH scrip key**, never a feed-specific identifier, through
+three dedicated method families — quotes, depth and indices each get their
+own `subscribe*`/`unsubscribe*`/`snapshot*` methods rather than one method
+taking a "kind" argument, so the call site already says what is meant:
+
+| | Subscribe | Unsubscribe | Snapshot |
+|---|---|---|---|
+| Touchline (quote) | `subscribeQuotes` | `unsubscribeQuotes` | `snapshotQuotes` |
+| Five-level depth | `subscribeDepth` | `unsubscribeDepth` | `snapshotDepth` |
+| Indices | `subscribeIndices` | `unsubscribeIndices` | `snapshotIndices` |
+
+The two families validate in opposite directions. `subscribeIndices` accepts
+only scrip keys HIGH publishes as indices; any other key is a clear error
+naming it. `subscribeQuotes`/`subscribeDepth` refuse a key that **is** an
+index, telling you to use the index methods instead — an index key that fell
+through to the ordinary equity path would silently subscribe to a token the
+feed does not know, and then simply never tick.
+
+**Typed models**, one per kind, each carrying the scrip key you subscribed
+with:
+
+- `Quote` — `tradingSymbol`, `lastTradedPrice`, `open`/`high`/`low`/
+  `previousClose`, `change`/`changePercent`, `volume`, `openInterest`,
+  `lastTradedTime`/`feedTime`, and more — see its Javadoc for the full list.
+- `Depth` — `bids`/`asks`, each a `List<DepthLevel>` of `{price, quantity,
+  orders}`. Check `source()` (`TOUCHLINE` or `FULL_DEPTH`) before assuming a
+  level count: a touchline-derived book is always exactly one level per side
+  (and `orders` is always `null` — order counts are not carried at
+  touchline), a `subscribeDepth` book is always exactly five.
+- `IndexQuote` — `indexName`, `indexValue`, `open`/`high`/`low`/
+  `previousClose`, `change`/`changePercent`, `feedTime`.
+
+Every value that arrives as a decimal string is parsed to `BigDecimal`, never
+a `double`. `lastTradedTime` and `feedTime` are IST wall-clock with no offset
+— do not treat them as UTC. A field this SDK does not (yet) name is preserved
+verbatim in `unknownFields()` rather than dropped.
+
+**Ticks are deltas.** The feed only sends what changed; `HighFeed` merges
+each one into a complete, typed snapshot before handing it to you, alongside
+`changedFields()` naming what this particular event actually moved. A tick
+that carries both quote and top-of-book information arrives as **two**
+separate events (`onQuote` and `onDepth`) — never one half-populated model.
+
+**Errors.** `HighFeedError` carries a `reason()` — `NO_DATA_PLAN`,
+`INVALID_TOKEN`, `MALFORMED_REQUEST`, `UNSUPPORTED_SCRIP`, `LIMIT_EXCEEDED`,
+`TRANSPORT`, or `OTHER` — plus `stCode()`/`serverMessage()` when it came from
+the server. An auth rejection is never retried or reconnected: the server
+will keep refusing, so `connect()` simply throws. A transport failure —
+a dropped connection, a timeout — is different: `HighFeed` reconnects with
+backoff, re-authenticates, and resends every active subscription before
+`FeedListener.onConnected()` fires again.
+
+**Limits.** The connection advertises `maxScripPerConn` and `maxScripPerReq`
+once authenticated (`feed.maxScripPerConn()`/`feed.maxScripPerReq()`); a
+subscription that would exceed either is refused locally — `HighFeedError`
+with reason `LIMIT_EXCEEDED` — rather than being sent and silently dropped by
+the server.
+
+**Thread-safe.** A `HighFeed` is meant to be shared across threads; every
+mutating call synchronizes internally.
 
 ## Regenerating from the spec
 

@@ -44,6 +44,21 @@ class ConfigTest {
             resolve(HighClientOptions.builder().environment(Environment.SANDBOX).build()).wsBaseUrl());
     }
 
+    /**
+     * Pins the literal production feed host as a unit assertion rather than
+     * ever dialling it: {@code openapi-feed.high.live} is not deployed yet, so
+     * nothing in this suite may attempt a live connection to it — every
+     * {@code HighFeed} test points at a local {@code WebSocketTestServer}
+     * instead (see {@code HighFeedTest}), and this is the one place the real
+     * default is checked at all.
+     */
+    @Test
+    void theDefaultProductionFeedHostIsTheRealFeedHostLiteral() {
+        assertEquals("wss://openapi-feed.high.live", Environments.get(Environment.PRODUCTION).ws());
+        assertEquals("wss://openapi-feed.high.live",
+            resolve(HighClientOptions.builder().build()).wsBaseUrl());
+    }
+
     @Test
     void letsWsBaseUrlBeOverriddenWithoutTouchingBaseUrl() {
         ResolvedConfig config = resolve(HighClientOptions.builder().wsBaseUrl("ws://127.0.0.1:9001").build());

@@ -38,6 +38,7 @@ public final class ResolvedConfig {
     private static final Set<String> DEFAULT_ALLOWED_INSTRUMENT_HOSTS =
         Set.of("high-space.blr1.cdn.digitaloceanspaces.com");
 
+    private final Environment environment;
     private final String baseUrl;
     private final String wsBaseUrl;
     private final String versionPath;
@@ -55,11 +56,12 @@ public final class ResolvedConfig {
     private final String accessToken;
 
     private ResolvedConfig(
-        String baseUrl, String wsBaseUrl, String versionPath,
+        Environment environment, String baseUrl, String wsBaseUrl, String versionPath,
         int timeoutMs, int maxRetries, int maxRetryDelayMs,
         String userAgent, LogLevel logLevel, Logger logger, HttpClient httpClient,
         Set<String> allowedInstrumentHosts, String apiKey, String accessToken
     ) {
+        this.environment = environment;
         this.baseUrl = baseUrl;
         this.wsBaseUrl = wsBaseUrl;
         this.versionPath = versionPath;
@@ -136,7 +138,7 @@ public final class ResolvedConfig {
         String accessToken = options.accessToken() != null ? options.accessToken() : env.get("HIGH_ACCESS_TOKEN");
 
         return new ResolvedConfig(
-            stripTrailingSlashes(baseUrl), stripTrailingSlashes(wsBaseUrl), trimSlashes(rawVersionPath),
+            environment, stripTrailingSlashes(baseUrl), stripTrailingSlashes(wsBaseUrl), trimSlashes(rawVersionPath),
             timeoutMs, maxRetries, maxRetryDelayMs, userAgent, logLevel, logger, httpClient,
             allowedInstrumentHosts, apiKey, accessToken);
     }
@@ -175,6 +177,18 @@ public final class ResolvedConfig {
             .filter(segment -> !segment.isEmpty())
             .reduce((a, b) -> a + "/" + b)
             .orElse("");
+    }
+
+    /**
+     * The environment actually resolved (see the class-level resolution
+     * order) — {@code PRODUCTION} whenever an explicit {@code baseUrl}/{@code
+     * wsBaseUrl} was given without an explicit {@code environment}, since
+     * there is then nothing to resolve an environment from besides the
+     * default. {@code HighFeed} refuses at construction when this is {@code
+     * SANDBOX}: the datafeed is production-only.
+     */
+    public Environment environment() {
+        return environment;
     }
 
     public String baseUrl() {
@@ -237,7 +251,8 @@ public final class ResolvedConfig {
         // Deliberately omits apiKey and accessToken. See the class-level note —
         // this is the whole reason ResolvedConfig is not a record.
         return "ResolvedConfig{"
-            + "baseUrl='" + baseUrl + '\''
+            + "environment=" + environment
+            + ", baseUrl='" + baseUrl + '\''
             + ", wsBaseUrl='" + wsBaseUrl + '\''
             + ", versionPath='" + versionPath + '\''
             + ", timeoutMs=" + timeoutMs

@@ -28,3 +28,20 @@ Initial release.
   rows, by category (`ALL`, `EQUITY`, `DERIVATIVES`, `COMMODITY`, `ETFS`) —
   `stream(...)` (primary, parses lazily) and `list(...)` (eager), each with a
   per-call timeout override and an `...Async` form. Needs no credentials.
+- `HighFeed`, a live datafeed client alongside `HighClient`, built from the
+  same `HighClientOptions` and credentials over `java.net.http.WebSocket` —
+  no new dependency. Production only; a client configured for sandbox fails
+  at construction. Dedicated `subscribeQuotes`/`subscribeDepth`/
+  `subscribeIndices` methods (with `unsubscribe*`/`snapshot*` counterparts)
+  take HIGH scrip keys only — the feed's own identifiers never appear in the
+  public surface — and validate in both directions: the index methods refuse
+  a non-index key, the quote/depth methods refuse an index key. Auth is a
+  gate: the access token is sent first and nothing else is sent until it is
+  acknowledged; a rejection is a typed `HighFeedError` and is never retried.
+  A transport failure reconnects with backoff, re-authenticates, and
+  resubscribes everything before reporting connected again. Delta ticks are
+  merged into complete, typed `Quote`/`Depth`/`IndexQuote` snapshots keyed by
+  the caller's own scrip key, each carrying the set of fields that changed;
+  a FULL-mode quote tick's embedded top-of-book fields are delivered as a
+  separate depth event rather than folded into the quote. Delivery through a
+  `FeedListener` and a `Flow.Publisher<FeedEvent>`.

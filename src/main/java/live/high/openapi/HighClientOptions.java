@@ -139,7 +139,7 @@ public final class HighClientOptions {
             return this;
         }
 
-        /** Datafeed socket host. Reserved for the feed client; overrides {@link #environment}. */
+        /** Datafeed socket host, used by {@link HighFeed}; overrides {@link #environment}. Production only — there is no sandbox feed. */
         public Builder wsBaseUrl(String wsBaseUrl) {
             this.wsBaseUrl = wsBaseUrl;
             return this;
