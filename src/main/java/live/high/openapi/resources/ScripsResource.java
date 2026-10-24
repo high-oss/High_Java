@@ -14,6 +14,7 @@ import live.high.openapi.Transport;
 import live.high.openapi.generated.model.Expiry;
 import live.high.openapi.generated.model.HistoricalCandles;
 import live.high.openapi.generated.model.HistoricalRequest;
+import live.high.openapi.generated.model.IntradayRequest;
 import live.high.openapi.generated.model.MarketDepth;
 import live.high.openapi.generated.model.OptionChain;
 import live.high.openapi.generated.model.OptionChainRequest;
@@ -104,7 +105,9 @@ public final class ScripsResource extends BaseResource {
 
     /**
      * Historical candles, returned columnar: every array has the same length
-     * and index i across them describes one candle (contract §12).
+     * and index i across them describes one candle (contract §12). The
+     * instrument is named by {@code tradingSymbol}, or by {@code
+     * exchangeSegment} + {@code scripCode} when no trading symbol is set.
      */
     public HistoricalCandles historical(HistoricalRequest body) {
         return write("POST", "/scrips/historical", body, HISTORICAL_CANDLES);
@@ -112,6 +115,20 @@ public final class ScripsResource extends BaseResource {
 
     public CompletableFuture<HistoricalCandles> historicalAsync(HistoricalRequest body) {
         return writeAsync("POST", "/scrips/historical", body, HISTORICAL_CANDLES);
+    }
+
+    /**
+     * Candles of the most recent trading session at a fixed interval, in the
+     * same columnar shape as {@link #historical}. The instrument is named the
+     * same way: {@code tradingSymbol}, or {@code exchangeSegment} +
+     * {@code scripCode}.
+     */
+    public HistoricalCandles intraday(IntradayRequest body) {
+        return write("POST", "/scrips/intraday", body, HISTORICAL_CANDLES);
+    }
+
+    public CompletableFuture<HistoricalCandles> intradayAsync(IntradayRequest body) {
+        return writeAsync("POST", "/scrips/intraday", body, HISTORICAL_CANDLES);
     }
 
     /** The option chain for one underlying and expiry. */

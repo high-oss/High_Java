@@ -195,15 +195,15 @@ form; `.join()`/`.get()` on the result is not it.
 
 ## Resources
 
-24 operations across five resources, each reachable as a method on
+27 operations across five resources, each reachable as a method on
 `HighClient`.
 
 | Resource | Methods |
 |---|---|
 | `auth()` | `generateAccessToken` |
 | `orders()` | `place` · `modify` · `get` · `cancel` · `list` · `trades` · `tradesFor` · `charges` · `margin` |
-| `portfolio()` | `positions` · `holdings` · `funds` · `convertPosition` · `exitAllPositions` · `exitPosition` |
-| `scrips()` | `quotes` · `ohlc` · `depth` · `expiries` · `futureData` · `historical` · `optionChain` |
+| `portfolio()` | `positions` · `holdings` · `funds` · `convertPosition` · `setStoploss` · `setTarget` · `exitAllPositions` · `exitPosition` |
+| `scrips()` | `quotes` · `ohlc` · `depth` · `expiries` · `futureData` · `historical` · `intraday` · `optionChain` |
 | `market()` | `status` |
 
 Each method returns the response's `data` — the `{requestId, data}` envelope
@@ -234,6 +234,11 @@ high.portfolio().holdings().getSnapshot().getInvestment();
 high.orders().get(orderId).getOrders().get(0).getScripCode();   // String
 high.scrips().futureData("NIFTY").get(0).getScripCode();        // Integer
 ```
+
+`historical` and `intraday` name the instrument either by `tradingSymbol` or by
+`exchangeSegment` + `scripCode`; `setStoploss` and `setTarget` take the same
+pair and return a `PositionRiskOrderResult`, with the quantity taken from the
+live position.
 
 `orders().margin(...)` and `scrips().expiries(...)` are the two operations
 whose request shape the spec never names: see the Javadoc on

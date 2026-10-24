@@ -25,7 +25,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.math.BigDecimal;
-import java.net.URI;
 import java.time.LocalDate;
 import java.util.Arrays;
 import live.high.openapi.generated.model.Touchline;
@@ -42,7 +41,6 @@ import live.high.openapi.generated.ApiClient;
   ScripInfo.JSON_PROPERTY_EXCHANGE,
   ScripInfo.JSON_PROPERTY_SEGMENT,
   ScripInfo.JSON_PROPERTY_SCRIP_KEY,
-  ScripInfo.JSON_PROPERTY_LOGO,
   ScripInfo.JSON_PROPERTY_SYMBOL,
   ScripInfo.JSON_PROPERTY_UNDERLYING_SYMBOL,
   ScripInfo.JSON_PROPERTY_SCRIP_NAME,
@@ -77,10 +75,6 @@ public class ScripInfo {
   public static final String JSON_PROPERTY_SCRIP_KEY = "scripKey";
   @javax.annotation.Nonnull
   private String scripKey;
-
-  public static final String JSON_PROPERTY_LOGO = "logo";
-  @javax.annotation.Nullable
-  private URI logo;
 
   public static final String JSON_PROPERTY_SYMBOL = "symbol";
   @javax.annotation.Nonnull
@@ -250,30 +244,6 @@ public class ScripInfo {
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public void setScripKey(@javax.annotation.Nonnull String scripKey) {
     this.scripKey = scripKey;
-  }
-
-
-  public ScripInfo logo(@javax.annotation.Nullable URI logo) {
-    this.logo = logo;
-    return this;
-  }
-
-  /**
-   * Get logo
-   * @return logo
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_LOGO, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public URI getLogo() {
-    return logo;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_LOGO, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setLogo(@javax.annotation.Nullable URI logo) {
-    this.logo = logo;
   }
 
 
@@ -582,7 +552,6 @@ public class ScripInfo {
         Objects.equals(this.exchange, scripInfo.exchange) &&
         Objects.equals(this.segment, scripInfo.segment) &&
         Objects.equals(this.scripKey, scripInfo.scripKey) &&
-        Objects.equals(this.logo, scripInfo.logo) &&
         Objects.equals(this.symbol, scripInfo.symbol) &&
         Objects.equals(this.underlyingSymbol, scripInfo.underlyingSymbol) &&
         Objects.equals(this.scripName, scripInfo.scripName) &&
@@ -599,7 +568,7 @@ public class ScripInfo {
 
   @Override
   public int hashCode() {
-    return Objects.hash(tradingSymbol, scripCode, exchange, segment, scripKey, logo, symbol, underlyingSymbol, scripName, marketLot, priceTick, isin, sector, industry, expiry, strikePrice, hasFnO, touchline);
+    return Objects.hash(tradingSymbol, scripCode, exchange, segment, scripKey, symbol, underlyingSymbol, scripName, marketLot, priceTick, isin, sector, industry, expiry, strikePrice, hasFnO, touchline);
   }
 
   @Override
@@ -611,7 +580,6 @@ public class ScripInfo {
     sb.append("    exchange: ").append(toIndentedString(exchange)).append("\n");
     sb.append("    segment: ").append(toIndentedString(segment)).append("\n");
     sb.append("    scripKey: ").append(toIndentedString(scripKey)).append("\n");
-    sb.append("    logo: ").append(toIndentedString(logo)).append("\n");
     sb.append("    symbol: ").append(toIndentedString(symbol)).append("\n");
     sb.append("    underlyingSymbol: ").append(toIndentedString(underlyingSymbol)).append("\n");
     sb.append("    scripName: ").append(toIndentedString(scripName)).append("\n");
@@ -691,11 +659,6 @@ public class ScripInfo {
     // add `scripKey` to the URL query string
     if (getScripKey() != null) {
       joiner.add(String.format(java.util.Locale.ROOT, "%sscripKey%s=%s", prefix, suffix, ApiClient.urlEncode(ApiClient.valueToString(getScripKey()))));
-    }
-
-    // add `logo` to the URL query string
-    if (getLogo() != null) {
-      joiner.add(String.format(java.util.Locale.ROOT, "%slogo%s=%s", prefix, suffix, ApiClient.urlEncode(ApiClient.valueToString(getLogo()))));
     }
 
     // add `symbol` to the URL query string

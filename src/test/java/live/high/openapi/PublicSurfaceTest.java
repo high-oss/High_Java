@@ -38,9 +38,10 @@ class PublicSurfaceTest {
 
     /**
      * Every operation the SDK covers as a method, sync form only (the {@code
-     * ...Async} forms mirror these 1:1). The spec has 27 operations; the SDK
-     * covers 24 — login, the two consent operations and token introspection
-     * are deliberately excluded (contract §1).
+     * ...Async} forms mirror these 1:1). The spec has 31 operations; the SDK
+     * covers 27 here — login, the two consent operations and token
+     * introspection are deliberately excluded (contract §1), and the instrument
+     * list is counted under {@code InstrumentsResource}.
      */
     @Test
     void exposesEveryCoveredOperationAsAMethod() {
@@ -49,9 +50,10 @@ class PublicSurfaceTest {
             OrdersResource.class, List.of(
                 "place", "modify", "get", "cancel", "list", "trades", "tradesFor", "charges", "margin"),
             PortfolioResource.class, List.of(
-                "positions", "holdings", "funds", "convertPosition", "exitAllPositions", "exitPosition"),
+                "positions", "holdings", "funds", "convertPosition", "setStoploss", "setTarget",
+                "exitAllPositions", "exitPosition"),
             ScripsResource.class, List.of(
-                "quotes", "ohlc", "depth", "expiries", "futureData", "historical", "optionChain"),
+                "quotes", "ohlc", "depth", "expiries", "futureData", "historical", "intraday", "optionChain"),
             MarketResource.class, List.of("status"));
 
         int count = 0;
@@ -64,7 +66,7 @@ class PublicSurfaceTest {
                 count++;
             }
         }
-        assertEquals(24, count);
+        assertEquals(27, count);
     }
 
     @Test

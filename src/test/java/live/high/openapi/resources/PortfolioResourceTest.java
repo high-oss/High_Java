@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.Map;
 import live.high.openapi.HighClientOptions;
 import live.high.openapi.ResolvedConfig;
@@ -17,7 +18,10 @@ import live.high.openapi.generated.model.Holdings;
 import live.high.openapi.generated.model.PositionConvertResult;
 import live.high.openapi.generated.model.PositionExitAllResult;
 import live.high.openapi.generated.model.PositionExitResult;
+import live.high.openapi.generated.model.PositionRiskOrderResult;
 import live.high.openapi.generated.model.Positions;
+import live.high.openapi.generated.model.SetPositionStoplossRequest;
+import live.high.openapi.generated.model.SetPositionTargetRequest;
 import live.high.openapi.support.TestServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -122,5 +126,60 @@ class PortfolioResourceTest {
         Map<String, Object> sent = JSON.readValue(req.body(), Map.class);
         assertEquals("RELIANCE-EQ", sent.get("tradingSymbol"));
         assertEquals("S", sent.get("tradeSide"));
+    }
+
+    @Test
+    void setStoplossSendsPatchWithTheSymbolAndSegmentAlternative() throws IOException {
+        server = TestServer.start((ex, i) -> TestServer.json(ex, 200, "{\"requestId\":\"r\",\"data\":"
+            + "{\"tradingSymbol\":\"RELIANCE-EQ\",\"exchangeSegment\":\"NSE\",\"scripCode\":\"2885\","
+            + "\"leg\":\"STOPLOSS\",\"action\":\"PLACED\",\"flavor\":\"REGULAR\",\"orderId\":\"250512000012345\","
+            + "\"quantity\":60,\"price\":2400,\"limitPrice\":2399.95,\"isSubmitted\":true}}"));
+        SetPositionStoplossRequest body = new SetPositionStoplossRequest()
+            .exchangeSegment(SetPositionStoplossRequest.ExchangeSegmentEnum.NSE)
+            .scripCode("2885")
+            .flavor(SetPositionStoplossRequest.FlavorEnum.REGULAR)
+            .productType(SetPositionStoplossRequest.ProductTypeEnum.INTRADAY)
+            .triggerPrice(new BigDecimal("2400"));
+
+        PositionRiskOrderResult result = portfolio().setStoploss(body);
+
+        assertEquals("STOPLOSS", result.getLeg().getValue());
+        assertEquals(60, result.getQuantity());
+        assertEquals(Boolean.TRUE, result.getIsSubmitted());
+        TestServer.ReceivedRequest req = server.requests().get(0);
+        assertEquals("PATCH", req.method());
+        assertEquals("/v1/portfolio/positions/stoploss", req.path());
+        Map<String, Object> sent = JSON.readValue(req.body(), Map.class);
+        assertEquals(null, sent.get("tradingSymbol"));
+        assertEquals("NSE", sent.get("exchangeSegment"));
+        assertEquals("2885", sent.get("scripCode"));
+        assertEquals("REGULAR", sent.get("flavor"));
+        assertEquals("INTRADAY", sent.get("productType"));
+        assertEquals(2400, ((Number) sent.get("triggerPrice")).intValue());
+    }
+
+    @Test
+    void setTargetSendsPatchWithTheSymbolAndTargetPrice() throws IOException {
+        server = TestServer.start((ex, i) -> TestServer.json(ex, 200, "{\"requestId\":\"r\",\"data\":"
+            + "{\"tradingSymbol\":\"RELIANCE-EQ\",\"exchangeSegment\":\"NSE\",\"scripCode\":\"2885\","
+            + "\"leg\":\"TARGET\",\"action\":\"MODIFIED\",\"flavor\":\"BO\",\"orderId\":\"\","
+            + "\"quantity\":60,\"price\":2600,\"isSubmitted\":true}}"));
+        SetPositionTargetRequest body = new SetPositionTargetRequest()
+            .tradingSymbol("RELIANCE-EQ")
+            .flavor(SetPositionTargetRequest.FlavorEnum.BO)
+            .productType(SetPositionTargetRequest.ProductTypeEnum.INTRADAY)
+            .targetPrice(new BigDecimal("2600"));
+
+        PositionRiskOrderResult result = portfolio().setTarget(body);
+
+        assertEquals("TARGET", result.getLeg().getValue());
+        assertEquals("MODIFIED", result.getAction().getValue());
+        TestServer.ReceivedRequest req = server.requests().get(0);
+        assertEquals("PATCH", req.method());
+        assertEquals("/v1/portfolio/positions/target", req.path());
+        Map<String, Object> sent = JSON.readValue(req.body(), Map.class);
+        assertEquals("RELIANCE-EQ", sent.get("tradingSymbol"));
+        assertEquals("BO", sent.get("flavor"));
+        assertEquals(2600, ((Number) sent.get("targetPrice")).intValue());
     }
 }

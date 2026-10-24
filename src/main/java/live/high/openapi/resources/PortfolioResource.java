@@ -14,7 +14,10 @@ import live.high.openapi.generated.model.Holdings;
 import live.high.openapi.generated.model.PositionConvertResult;
 import live.high.openapi.generated.model.PositionExitAllResult;
 import live.high.openapi.generated.model.PositionExitResult;
+import live.high.openapi.generated.model.PositionRiskOrderResult;
 import live.high.openapi.generated.model.Positions;
+import live.high.openapi.generated.model.SetPositionStoplossRequest;
+import live.high.openapi.generated.model.SetPositionTargetRequest;
 
 public final class PortfolioResource extends BaseResource {
 
@@ -24,6 +27,7 @@ public final class PortfolioResource extends BaseResource {
     private static final TypeReference<PositionConvertResult> CONVERT_RESULT = new TypeReference<>() {};
     private static final TypeReference<PositionExitAllResult> EXIT_ALL_RESULT = new TypeReference<>() {};
     private static final TypeReference<PositionExitResult> EXIT_RESULT = new TypeReference<>() {};
+    private static final TypeReference<PositionRiskOrderResult> RISK_ORDER_RESULT = new TypeReference<>() {};
 
     public PortfolioResource(ResolvedConfig config) {
         super(config);
@@ -63,6 +67,30 @@ public final class PortfolioResource extends BaseResource {
 
     public CompletableFuture<PositionConvertResult> convertPositionAsync(ConvertPositionRequest body) {
         return writeAsync("PATCH", "/portfolio/positions/convert", body, CONVERT_RESULT);
+    }
+
+    /**
+     * Places a stop-loss exit order for an open position, or amends the
+     * existing one. Quantity comes from the live position. Never retried.
+     */
+    public PositionRiskOrderResult setStoploss(SetPositionStoplossRequest body) {
+        return write("PATCH", "/portfolio/positions/stoploss", body, RISK_ORDER_RESULT);
+    }
+
+    public CompletableFuture<PositionRiskOrderResult> setStoplossAsync(SetPositionStoplossRequest body) {
+        return writeAsync("PATCH", "/portfolio/positions/stoploss", body, RISK_ORDER_RESULT);
+    }
+
+    /**
+     * Places a target (limit) exit order for an open position, or amends the
+     * existing one. Quantity comes from the live position. Never retried.
+     */
+    public PositionRiskOrderResult setTarget(SetPositionTargetRequest body) {
+        return write("PATCH", "/portfolio/positions/target", body, RISK_ORDER_RESULT);
+    }
+
+    public CompletableFuture<PositionRiskOrderResult> setTargetAsync(SetPositionTargetRequest body) {
+        return writeAsync("PATCH", "/portfolio/positions/target", body, RISK_ORDER_RESULT);
     }
 
     /** Squares off every open position. Never retried. */

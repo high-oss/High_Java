@@ -2,6 +2,31 @@
 
 All notable changes to this project are documented in this file.
 
+## 0.0.2 - 2026-10-24
+
+Synced to spec commit `c1f37de`.
+
+### Added
+
+- `scrips().intraday(...)` (`POST /scrips/intraday`): OHLCV candles of the most
+  recent trading session at a fixed interval, returned in the same columnar
+  `HistoricalCandles` shape as `historical`. Has an `...Async` form.
+- `portfolio().setStoploss(...)` (`PATCH /portfolio/positions/stoploss`) and
+  `portfolio().setTarget(...)` (`PATCH /portfolio/positions/target`): place or
+  amend a stop-loss or target exit order for an open position. Both return a
+  new `PositionRiskOrderResult`, and both are never retried.
+
+### Changed
+
+- `scrips().historical(...)`: the instrument is named by `tradingSymbol`, or by
+  `exchangeSegment` + `scripCode`. `tradingSymbol` is no longer required by the
+  request model.
+
+### Removed
+
+- `logo` is removed from `ScripInfo`, following the spec: the API no longer
+  returns it.
+
 ## 0.0.1
 
 Initial release.

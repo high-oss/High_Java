@@ -16,6 +16,7 @@ import live.high.openapi.ResolvedConfig;
 import live.high.openapi.generated.model.Expiry;
 import live.high.openapi.generated.model.HistoricalCandles;
 import live.high.openapi.generated.model.HistoricalRequest;
+import live.high.openapi.generated.model.IntradayRequest;
 import live.high.openapi.generated.model.MarketDepth;
 import live.high.openapi.generated.model.OptionChain;
 import live.high.openapi.generated.model.OptionChainRequest;
@@ -117,6 +118,49 @@ class ScripsResourceTest {
         Map<String, Object> sent = JSON.readValue(server.requests().get(0).body(), Map.class);
         assertEquals(1789929000, sent.get("fromTime"));
         assertEquals(1790330400, sent.get("toTime"));
+    }
+
+    @Test
+    void historicalAcceptsASegmentAndScripCodeInPlaceOfATradingSymbol() throws IOException {
+        server = TestServer.start((ex, i) -> TestServer.json(ex, 200, "{\"requestId\":\"r\",\"data\":"
+            + "{\"tradingSymbol\":\"NSE@2885\",\"interval\":\"1D\",\"timestamp\":[1789929000],"
+            + "\"open\":[1407],\"high\":[1418.6],\"low\":[1403.2],\"close\":[1412.3],\"volume\":[6843210],\"oi\":[0]}}"));
+        HistoricalRequest body = new HistoricalRequest()
+            .exchangeSegment(HistoricalRequest.ExchangeSegmentEnum.NSE)
+            .scripCode("2885")
+            .interval(HistoricalRequest.IntervalEnum._1_D)
+            .fromTime(1789929000)
+            .toTime(1790330400);
+
+        HistoricalCandles candles = scrips().historical(body);
+
+        assertEquals(0, java.math.BigDecimal.valueOf(1412.3).compareTo(candles.getClose().get(0)));
+        Map<String, Object> sent = JSON.readValue(server.requests().get(0).body(), Map.class);
+        assertEquals(null, sent.get("tradingSymbol"));
+        assertEquals("NSE", sent.get("exchangeSegment"));
+        assertEquals("2885", sent.get("scripCode"));
+    }
+
+    @Test
+    void intradaySendsItsOwnPathAndReturnsTheSameColumnarShape() throws IOException {
+        server = TestServer.start((ex, i) -> TestServer.json(ex, 200, "{\"requestId\":\"r\",\"data\":"
+            + "{\"tradingSymbol\":\"NSE@2885\",\"interval\":\"5m\",\"timestamp\":[1790308500,1790308800],"
+            + "\"open\":[1408.2,1409.4],\"high\":[1410.3,1411.2],\"low\":[1407.6,1408.9],"
+            + "\"close\":[1409.4,1410.1],\"volume\":[184320,152110]}}"));
+        IntradayRequest body = new IntradayRequest()
+            .tradingSymbol("RELIANCE-EQ")
+            .interval(IntradayRequest.IntervalEnum._5M);
+
+        HistoricalCandles candles = scrips().intraday(body);
+
+        assertEquals(2, candles.getClose().size());
+        assertEquals(0, java.math.BigDecimal.valueOf(1410.1).compareTo(candles.getClose().get(1)));
+        TestServer.ReceivedRequest req = server.requests().get(0);
+        assertEquals("POST", req.method());
+        assertEquals("/v1/scrips/intraday", req.path());
+        Map<String, Object> sent = JSON.readValue(req.body(), Map.class);
+        assertEquals("RELIANCE-EQ", sent.get("tradingSymbol"));
+        assertEquals("5m", sent.get("interval"));
     }
 
     @Test

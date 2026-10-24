@@ -36,6 +36,8 @@ import live.high.openapi.generated.ApiClient;
  */
 @JsonPropertyOrder({
   HistoricalRequest.JSON_PROPERTY_TRADING_SYMBOL,
+  HistoricalRequest.JSON_PROPERTY_EXCHANGE_SEGMENT,
+  HistoricalRequest.JSON_PROPERTY_SCRIP_CODE,
   HistoricalRequest.JSON_PROPERTY_INTERVAL,
   HistoricalRequest.JSON_PROPERTY_FROM_TIME,
   HistoricalRequest.JSON_PROPERTY_TO_TIME,
@@ -44,8 +46,61 @@ import live.high.openapi.generated.ApiClient;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
 public class HistoricalRequest {
   public static final String JSON_PROPERTY_TRADING_SYMBOL = "tradingSymbol";
-  @javax.annotation.Nonnull
+  @javax.annotation.Nullable
   private String tradingSymbol;
+
+  /**
+   * Exchange segment. Required when tradingSymbol is not sent.
+   */
+  public enum ExchangeSegmentEnum {
+    NSE(String.valueOf("NSE")),
+    
+    BSE(String.valueOf("BSE")),
+    
+    NSEFO(String.valueOf("NSEFO")),
+    
+    BSEFO(String.valueOf("BSEFO")),
+    
+    NSECDSFO(String.valueOf("NSECDSFO")),
+    
+    BSECDSFO(String.valueOf("BSECDSFO")),
+    
+    MCXFO(String.valueOf("MCXFO"));
+
+    private String value;
+
+    ExchangeSegmentEnum(String value) {
+      this.value = value;
+    }
+
+    @JsonValue
+    public String getValue() {
+      return value;
+    }
+
+    @Override
+    public String toString() {
+      return String.valueOf(value);
+    }
+
+    @JsonCreator
+    public static ExchangeSegmentEnum fromValue(String value) {
+      for (ExchangeSegmentEnum b : ExchangeSegmentEnum.values()) {
+        if (b.value.equals(value)) {
+          return b;
+        }
+      }
+      throw new IllegalArgumentException("Unexpected value '" + value + "'");
+    }
+  }
+
+  public static final String JSON_PROPERTY_EXCHANGE_SEGMENT = "exchangeSegment";
+  @javax.annotation.Nullable
+  private ExchangeSegmentEnum exchangeSegment;
+
+  public static final String JSON_PROPERTY_SCRIP_CODE = "scripCode";
+  @javax.annotation.Nullable
+  private String scripCode;
 
   /**
    * Candle length: m &#x3D; minutes, h &#x3D; hours, D/W/M &#x3D; day, week, month. 3M, 6M and 1Y are passed to the broker without the translation the others get and may come back empty; build them from 1M candles instead.
@@ -135,27 +190,75 @@ public class HistoricalRequest {
   public HistoricalRequest() { 
   }
 
-  public HistoricalRequest tradingSymbol(@javax.annotation.Nonnull String tradingSymbol) {
+  public HistoricalRequest tradingSymbol(@javax.annotation.Nullable String tradingSymbol) {
     this.tradingSymbol = tradingSymbol;
     return this;
   }
 
   /**
-   * Trading symbol from the instrument list.
+   * Trading symbol from the instrument list. Required unless exchangeSegment + scripCode are sent.
    * @return tradingSymbol
    */
-  @javax.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_TRADING_SYMBOL, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  @javax.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_TRADING_SYMBOL, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
   public String getTradingSymbol() {
     return tradingSymbol;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_TRADING_SYMBOL, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setTradingSymbol(@javax.annotation.Nonnull String tradingSymbol) {
+  @JsonProperty(value = JSON_PROPERTY_TRADING_SYMBOL, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setTradingSymbol(@javax.annotation.Nullable String tradingSymbol) {
     this.tradingSymbol = tradingSymbol;
+  }
+
+
+  public HistoricalRequest exchangeSegment(@javax.annotation.Nullable ExchangeSegmentEnum exchangeSegment) {
+    this.exchangeSegment = exchangeSegment;
+    return this;
+  }
+
+  /**
+   * Exchange segment. Required when tradingSymbol is not sent.
+   * @return exchangeSegment
+   */
+  @javax.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_EXCHANGE_SEGMENT, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public ExchangeSegmentEnum getExchangeSegment() {
+    return exchangeSegment;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_EXCHANGE_SEGMENT, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setExchangeSegment(@javax.annotation.Nullable ExchangeSegmentEnum exchangeSegment) {
+    this.exchangeSegment = exchangeSegment;
+  }
+
+
+  public HistoricalRequest scripCode(@javax.annotation.Nullable String scripCode) {
+    this.scripCode = scripCode;
+    return this;
+  }
+
+  /**
+   * Broker scrip code (token). Required when tradingSymbol is not sent.
+   * @return scripCode
+   */
+  @javax.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_SCRIP_CODE, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public String getScripCode() {
+    return scripCode;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_SCRIP_CODE, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setScripCode(@javax.annotation.Nullable String scripCode) {
+    this.scripCode = scripCode;
   }
 
 
@@ -276,6 +379,8 @@ public class HistoricalRequest {
     }
     HistoricalRequest historicalRequest = (HistoricalRequest) o;
     return Objects.equals(this.tradingSymbol, historicalRequest.tradingSymbol) &&
+        Objects.equals(this.exchangeSegment, historicalRequest.exchangeSegment) &&
+        Objects.equals(this.scripCode, historicalRequest.scripCode) &&
         Objects.equals(this.interval, historicalRequest.interval) &&
         Objects.equals(this.fromTime, historicalRequest.fromTime) &&
         Objects.equals(this.toTime, historicalRequest.toTime) &&
@@ -284,7 +389,7 @@ public class HistoricalRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(tradingSymbol, interval, fromTime, toTime, fields);
+    return Objects.hash(tradingSymbol, exchangeSegment, scripCode, interval, fromTime, toTime, fields);
   }
 
   @Override
@@ -292,6 +397,8 @@ public class HistoricalRequest {
     StringBuilder sb = new StringBuilder();
     sb.append("class HistoricalRequest {\n");
     sb.append("    tradingSymbol: ").append(toIndentedString(tradingSymbol)).append("\n");
+    sb.append("    exchangeSegment: ").append(toIndentedString(exchangeSegment)).append("\n");
+    sb.append("    scripCode: ").append(toIndentedString(scripCode)).append("\n");
     sb.append("    interval: ").append(toIndentedString(interval)).append("\n");
     sb.append("    fromTime: ").append(toIndentedString(fromTime)).append("\n");
     sb.append("    toTime: ").append(toIndentedString(toTime)).append("\n");
@@ -343,6 +450,16 @@ public class HistoricalRequest {
     // add `tradingSymbol` to the URL query string
     if (getTradingSymbol() != null) {
       joiner.add(String.format(java.util.Locale.ROOT, "%stradingSymbol%s=%s", prefix, suffix, ApiClient.urlEncode(ApiClient.valueToString(getTradingSymbol()))));
+    }
+
+    // add `exchangeSegment` to the URL query string
+    if (getExchangeSegment() != null) {
+      joiner.add(String.format(java.util.Locale.ROOT, "%sexchangeSegment%s=%s", prefix, suffix, ApiClient.urlEncode(ApiClient.valueToString(getExchangeSegment()))));
+    }
+
+    // add `scripCode` to the URL query string
+    if (getScripCode() != null) {
+      joiner.add(String.format(java.util.Locale.ROOT, "%sscripCode%s=%s", prefix, suffix, ApiClient.urlEncode(ApiClient.valueToString(getScripCode()))));
     }
 
     // add `interval` to the URL query string
