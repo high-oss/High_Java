@@ -240,6 +240,30 @@ high.scrips().futureData("NIFTY").get(0).getScripCode();        // Integer
 pair and return a `PositionRiskOrderResult`, with the quantity taken from the
 live position.
 
+```java
+import java.math.BigDecimal;
+import live.high.openapi.generated.model.HistoricalCandles;
+import live.high.openapi.generated.model.IntradayRequest;
+import live.high.openapi.generated.model.PositionRiskOrderResult;
+import live.high.openapi.generated.model.SetPositionStoplossRequest;
+
+// intraday: the latest session's candles, columnar like historical
+HistoricalCandles today = high.scrips().intraday(new IntradayRequest()
+    .exchangeSegment(IntradayRequest.ExchangeSegmentEnum.NSE)
+    .scripCode("2885")
+    .interval(IntradayRequest.IntervalEnum._5M));
+today.getClose().get(0);
+
+// stop-loss on an open position; setTarget takes the same shape with targetPrice.
+// Needs a static IP registered with HIGH. Never retried.
+PositionRiskOrderResult stoploss = high.portfolio().setStoploss(new SetPositionStoplossRequest()
+    .tradingSymbol("RELIANCE-EQ")
+    .flavor(SetPositionStoplossRequest.FlavorEnum.REGULAR)
+    .productType(SetPositionStoplossRequest.ProductTypeEnum.INTRADAY)
+    .triggerPrice(new BigDecimal("2800.00")));
+stoploss.getAction();     // PLACED, or MODIFIED when an orderId was given
+```
+
 `orders().margin(...)` and `scrips().expiries(...)` are the two operations
 whose request shape the spec never names: see the Javadoc on
 `live.high.openapi.model.OrderMarginItem` and `live.high.openapi.ExpiryType`
