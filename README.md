@@ -195,7 +195,7 @@ form; `.join()`/`.get()` on the result is not it.
 
 ## Resources
 
-27 operations across five resources, each reachable as a method on
+28 operations across six resources, each reachable as a method on
 `HighClient`.
 
 | Resource | Methods |
@@ -203,6 +203,7 @@ form; `.join()`/`.get()` on the result is not it.
 | `auth()` | `generateAccessToken` |
 | `orders()` | `place` · `modify` · `get` · `cancel` · `list` · `trades` · `tradesFor` · `charges` · `margin` |
 | `portfolio()` | `positions` · `holdings` · `funds` · `convertPosition` · `setStoploss` · `setTarget` · `exitAllPositions` · `exitPosition` |
+| `profile()` | `get` |
 | `scrips()` | `quotes` · `ohlc` · `depth` · `expiries` · `futureData` · `historical` · `intraday` · `optionChain` |
 | `market()` | `status` |
 

@@ -8,6 +8,7 @@ import live.high.openapi.resources.InstrumentsResource;
 import live.high.openapi.resources.MarketResource;
 import live.high.openapi.resources.OrdersResource;
 import live.high.openapi.resources.PortfolioResource;
+import live.high.openapi.resources.ProfileResource;
 import live.high.openapi.resources.ScripsResource;
 
 /**
@@ -29,6 +30,7 @@ public final class HighClient {
     private final MarketResource market;
     private final OrdersResource orders;
     private final PortfolioResource portfolio;
+    private final ProfileResource profile;
     private final ScripsResource scrips;
     private final InstrumentsResource instruments;
 
@@ -38,6 +40,7 @@ public final class HighClient {
         this.market = new MarketResource(config);
         this.orders = new OrdersResource(config);
         this.portfolio = new PortfolioResource(config);
+        this.profile = new ProfileResource(config);
         this.scrips = new ScripsResource(config);
         this.instruments = new InstrumentsResource(config);
     }
@@ -65,6 +68,10 @@ public final class HighClient {
 
     public PortfolioResource portfolio() {
         return portfolio;
+    }
+
+    public ProfileResource profile() {
+        return profile;
     }
 
     public ScripsResource scrips() {

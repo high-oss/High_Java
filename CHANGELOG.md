@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## Unreleased
+
+### Added
+
+- `profile().get()` (`GET /profile`): the account holder's identity, demat and
+  bank details as a `Profile`. PAN, Aadhaar and bank account numbers are masked
+  to their last four characters. Has an `...Async` form.
+
 ## 0.0.2 - 2026-10-24
 
 Synced to spec commit `c1f37de`.

@@ -16,6 +16,7 @@ import live.high.openapi.resources.AuthResource;
 import live.high.openapi.resources.MarketResource;
 import live.high.openapi.resources.OrdersResource;
 import live.high.openapi.resources.PortfolioResource;
+import live.high.openapi.resources.ProfileResource;
 import live.high.openapi.resources.ScripsResource;
 import org.junit.jupiter.api.Test;
 
@@ -26,20 +27,21 @@ class PublicSurfaceTest {
     }
 
     @Test
-    void exposesAllFiveResourcesOnAConstructedClient() {
+    void exposesAllSixResourcesOnAConstructedClient() {
         HighClient client = client();
         assertTrue(client.auth() != null);
         assertTrue(client.market() != null);
         assertTrue(client.orders() != null);
         assertTrue(client.portfolio() != null);
+        assertTrue(client.profile() != null);
         assertTrue(client.scrips() != null);
         assertTrue(client.instruments() != null);
     }
 
     /**
      * Every operation the SDK covers as a method, sync form only (the {@code
-     * ...Async} forms mirror these 1:1). The spec has 31 operations; the SDK
-     * covers 27 here — login, the two consent operations and token
+     * ...Async} forms mirror these 1:1). The spec has 32 operations; the SDK
+     * covers 28 here — login, the two consent operations and token
      * introspection are deliberately excluded (contract §1), and the instrument
      * list is counted under {@code InstrumentsResource}.
      */
@@ -52,6 +54,7 @@ class PublicSurfaceTest {
             PortfolioResource.class, List.of(
                 "positions", "holdings", "funds", "convertPosition", "setStoploss", "setTarget",
                 "exitAllPositions", "exitPosition"),
+            ProfileResource.class, List.of("get"),
             ScripsResource.class, List.of(
                 "quotes", "ohlc", "depth", "expiries", "futureData", "historical", "intraday", "optionChain"),
             MarketResource.class, List.of("status"));
@@ -66,7 +69,7 @@ class PublicSurfaceTest {
                 count++;
             }
         }
-        assertEquals(27, count);
+        assertEquals(28, count);
     }
 
     @Test
@@ -109,7 +112,8 @@ class PublicSurfaceTest {
         assertFalse(json.contains("SECRET-KEY"));
 
         for (Object resource : new Object[] {
-            client.auth(), client.orders(), client.portfolio(), client.scrips(), client.market(), client.instruments()
+            client.auth(), client.orders(), client.portfolio(), client.profile(), client.scrips(), client.market(),
+            client.instruments()
         }) {
             String resourceJson = mapper.writeValueAsString(resource);
             assertFalse(resourceJson.contains("SECRET-TOKEN"));
